@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Roboto', sans-serif; background-color: white; }
+        #main-container {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: space-between;
+            width: 100%; height: 450px; padding: 5px; box-sizing: border-box;
+        }
+        h2 { margin: 0 0 5px 0; color: #317eae; font-weight: 700; font-size: 24px; }
+        .game-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+        canvas { border: 2px solid #6495ED; background: #fff; max-width: 100%; height: auto; }
+        .controls { text-align: center; width: 100%; margin-top: 5px; }
+        #instruction { font-size: 11px; color: #888; margin: 5px 0 0 0; }
+        .btn { padding: 8px 25px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; min-width: 110px; font-family: 'Roboto'; font-size: 14px; }
+        .play-mode { background-color: #6495ED; }
+        .stop-mode { background-color: #dc3545; }
+        .github-link { display: inline-block; margin-top: 4px; color: #317eae; font-size: 13px; text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div id="main-container">
+    <h2>Pong</h2>
+    <div class="game-area"><canvas id="pongCanvas" width="500" height="300"></canvas></div>
+    <div class="controls">
+        <button id="toggleBtn" class="btn play-mode" onclick="toggleGame()">Play</button>
+        <p id="instruction">Player 1: W/S | Player 2: Arrows</p>
+        <a href="https://github.com/harsven/python-games/tree/main/Pong" target="_blank" class="github-link">View Python Code on GitHub</a>
+    </div>
+</div>
+<script>
+    const canvas = document.getElementById("pongCanvas"); const ctx = canvas.getContext("2d"); const btn = document.getElementById("toggleBtn");
+    let isRunning = false; let ball_pos = [250, 150], ball_vel = [0, 0]; let p1_y = 110, p2_y = 110, p1_v = 0, p2_v = 0; let score1 = 0, score2 = 0;
+    function toggleGame() { if (!isRunning) { isRunning = true; btn.innerText = "Stop"; btn.className = "btn stop-mode"; spawnBall(true); } else { isRunning = false; btn.innerText = "Play"; btn.className = "btn play-mode"; resetToCenter(); } }
+    function resetToCenter() { ball_pos = [250, 150]; ball_vel = [0, 0]; p1_y = 110; p2_y = 110; }
+    function spawnBall(toRight) { ball_pos = [250, 150]; ball_vel = [(toRight ? 3 : -3), (Math.random() * 3 - 1.5)]; }
+    function update() { if (!isRunning) return; ball_pos[0] += ball_vel[0]; ball_pos[1] += ball_vel[1]; p1_y = Math.max(0, Math.min(220, p1_y + p1_v)); p2_y = Math.max(0, Math.min(220, p2_y + p2_v)); if (ball_pos[1] <= 10 || ball_pos[1] >= 290) ball_vel[1] *= -1; if (ball_pos[0] <= 20) { if (ball_pos[1] > p1_y && ball_pos[1] < p1_y + 80) ball_vel[0] *= -1.1; else { score2++; spawnBall(true); } } if (ball_pos[0] >= 480) { if (ball_pos[1] > p2_y && ball_pos[1] < p2_y + 80) ball_vel[0] *= -1.1; else { score1++; spawnBall(false); } } }
+    function draw() { ctx.clearRect(0, 0, 500, 300); ctx.fillStyle = "#6495ED"; ctx.strokeStyle = "#6495ED"; ctx.font = "20px Roboto"; ctx.textAlign = "center"; ctx.globalAlpha = 0.4; ctx.fillText(score1, 125, 60); ctx.fillText(score2, 375, 60); ctx.globalAlpha = 1.0; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(250,0); ctx.lineTo(250,300); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.arc(ball_pos[0], ball_pos[1], 8, 0, Math.PI*2); ctx.fill(); ctx.fillRect(0, p1_y, 10, 80); ctx.fillRect(490, p2_y, 10, 80); update(); requestAnimationFrame(draw); }
+    window.addEventListener("keydown", e => { if(e.key.toLowerCase()==='w') p1_v=-5; if(e.key.toLowerCase()==='s') p1_v=5; if(e.key==='ArrowUp') p2_v=-5; if(e.key==='ArrowDown') p2_v=5; if(["ArrowUp","ArrowDown"].includes(e.key)) e.preventDefault(); });
+    window.addEventListener("keyup", e => { if(['w','s'].includes(e.key.toLowerCase())) p1_v=0; if(['ArrowUp','ArrowDown'].includes(e.key)) p2_v=0; });
+    draw();
+</script>
+</body>
+</html>
