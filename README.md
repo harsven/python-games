@@ -1,5 +1,4 @@
-# Python Games & Web Portfolios
-
+# Python Games
 This repository showcases the evolution of small-scale logic projects from Python exercises to interactive web implementations.
 
 ## Overview
