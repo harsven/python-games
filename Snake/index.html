@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Roboto', sans-serif; background-color: white; }
+        #main-container {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: space-between;
+            width: 100%; height: 450px; padding: 5px; box-sizing: border-box;
+        }
+        h2 { margin: 0 0 5px 0; color: #317eae; font-weight: 700; font-size: 24px; }
+        .game-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+        canvas { border: 2px solid #6495ED; background: #fff; max-width: 100%; height: auto; display: block; }
+        .controls { text-align: center; width: 100%; margin-top: 5px; }
+        #instruction { font-size: 11px; color: #888; margin: 5px 0 0 0; }
+        .btn { padding: 8px 25px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; min-width: 110px; font-family: 'Roboto'; font-size: 14px; }
+        .play-mode { background-color: #6495ED; }
+        .stop-mode { background-color: #dc3545; }
+        .github-link { display: inline-block; margin-top: 4px; color: #317eae; font-size: 13px; text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div id="main-container">
+    <h2>Snake</h2>
+    <div class="game-area"><canvas id="snakeCanvas" width="300" height="300"></canvas></div>
+    <div class="controls">
+        <button id="toggleBtn" class="btn play-mode" onclick="toggleGame()">Play</button>
+        <p id="instruction">Score: <span id="scoreDisplay">0</span> | Arrows</p>
+        <a href="https://github.com/harsven/python-games/tree/main/Snake" target="_blank" class="github-link">View Python Code on GitHub</a>
+    </div>
+</div>
+<script>
+    const canvas = document.getElementById("snakeCanvas"); const ctx = canvas.getContext("2d"); const btn = document.getElementById("toggleBtn"); const scoreDisplay = document.getElementById("scoreDisplay");
+    let isRunning = false, snake = [], snake_dir = "up", food_position = [0, 0], gameLoop, score = 0; const grid = 15; // Grid kleiner für kompaktes Feld
+    const offsets = { "up": [0, -grid], "down": [0, grid], "left": [-grid, 0], "right": [grid, 0] };
+    function reset() { snake = [[150, 150], [150, 165], [150, 180]]; snake_dir = "up"; food_position = getRandomFoodPosition(); score = 0; scoreDisplay.innerText = score; }
+    function getRandomFoodPosition() { return [Math.floor(Math.random() * 20) * 15, Math.floor(Math.random() * 20) * 15]; }
+    function toggleGame() { if (!isRunning) { isRunning = true; btn.innerText = "Stop"; btn.className = "btn stop-mode"; reset(); gameLoop = setInterval(moveSnake, 110); } else { isRunning = false; btn.innerText = "Play"; btn.className = "btn play-mode"; clearInterval(gameLoop); draw(); } }
+    function moveSnake() {
+        let newHead = [snake[0][0] + offsets[snake_dir][0], snake[0][1] + offsets[snake_dir][1]];
+        if (newHead[0] < 0) newHead[0] = 285; else if (newHead[0] >= 300) newHead[0] = 0;
+        if (newHead[1] < 0) newHead[1] = 285; else if (newHead[1] >= 300) newHead[1] = 0;
+        for (let s of snake) { if (newHead[0] === s[0] && newHead[1] === s[1]) { toggleGame(); return; } }
+        snake.unshift(newHead); if (newHead[0] === food_position[0] && newHead[1] === food_position[1]) { food_position = getRandomFoodPosition(); score += 10; scoreDisplay.innerText = score; } else { snake.pop(); } draw();
+    }
+    function draw() { ctx.clearRect(0, 0, 300, 300); ctx.fillStyle = "CornflowerBlue"; for (let s of snake) { ctx.beginPath(); ctx.arc(s[0]+7.5, s[1]+7.5, 6, 0, Math.PI*2); ctx.fill(); } ctx.beginPath(); ctx.arc(food_position[0]+7.5, food_position[1]+7.5, 6, 0, Math.PI*2); ctx.fill(); }
+    window.addEventListener("keydown", e => { if (!isRunning) return; if (e.key === "ArrowUp" && snake_dir !== "down") snake_dir = "up"; else if (e.key === "ArrowDown" && snake_dir !== "up") snake_dir = "down"; else if (e.key === "ArrowLeft" && snake_dir !== "right") snake_dir = "left"; else if (e.key === "ArrowRight" && snake_dir !== "left") snake_dir = "right"; if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault(); });
+    reset(); draw();
+</script>
+</body>
+</html>
