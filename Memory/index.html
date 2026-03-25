@@ -4,40 +4,186 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Roboto', sans-serif; background-color: white; }
+        
         #main-container {
             display: flex; flex-direction: column; align-items: center;
             justify-content: space-between;
             width: 100%; height: 450px; padding: 5px; box-sizing: border-box;
         }
+
+        /* Überschrift in deinem Website-Blau */
         h2 { margin: 0 0 5px 0; color: #317eae; font-weight: 700; font-size: 24px; }
+        
         .game-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
-        canvas { border: 2px solid #6495ED; background: #fff; max-width: 100%; height: auto; cursor: pointer; }
+        
+        /* Canvas Rahmen angepasst auf #317eae */
+        canvas { border: 2px solid #317eae; background: #fff; max-width: 100%; height: auto; cursor: pointer; }
+        
         .controls { text-align: center; width: 100%; margin-top: 5px; }
         #instruction { font-size: 11px; color: #888; margin: 5px 0 0 0; }
+        
+        /* Buttons Design */
         .btn { padding: 8px 25px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; min-width: 110px; font-family: 'Roboto'; font-size: 14px; }
-        .play-mode { background-color: #6495ED; }
-        .stop-mode { background-color: #dc3545; }
+        .play-mode { background-color: #317eae; } /* Play Button in Website-Blau */
+        .stop-mode { background-color: #dc3545; } /* Stop/Restart in Rot */
+        
         .github-link { display: inline-block; margin-top: 4px; color: #317eae; font-size: 13px; text-decoration: underline; }
     </style>
 </head>
 <body>
+
 <div id="main-container">
     <h2>Memory</h2>
-    <div class="game-area"><canvas id="memoryCanvas" width="800" height="100"></canvas></div>
+    <div class="game-area">
+        <canvas id="memoryCanvas" width="800" height="100"></canvas>
+    </div>
     <div class="controls">
         <button id="toggleBtn" class="btn play-mode" onclick="toggleGame()">Play</button>
         <p id="instruction">Turns: <span id="turnCounter">0</span></p>
         <a href="https://github.com/harsven/python-games/tree/main/Memory" target="_blank" class="github-link">View Python Code on GitHub</a>
     </div>
 </div>
+
 <script>
-    const canvas = document.getElementById("memoryCanvas"); const ctx = canvas.getContext("2d"); const btn = document.getElementById("toggleBtn"); const turnDisplay = document.getElementById("turnCounter");
-    let isRunning = false; let cardsListing = [], revealed = [], cardOpened = [], countedClicks = 0, chances = 0;
-    function initData() { cardsListing = []; for (let i = 0; i < 8; i++) { cardsListing.push(i, i); } for (let i = cardsListing.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cardsListing[i], cardsListing[j]] = [cardsListing[j], cardsListing[i]]; } revealed = new Array(16).fill(false); cardOpened = []; countedClicks = 0; chances = 0; turnDisplay.innerText = chances; }
-    function toggleGame() { if (!isRunning) { isRunning = true; btn.innerText = "Stop"; btn.className = "btn stop-mode"; initData(); } else { isRunning = false; btn.innerText = "Play"; btn.className = "btn play-mode"; revealed = new Array(16).fill(false); chances = 0; turnDisplay.innerText = chances; } draw(); }
-    canvas.addEventListener('click', function(event) { if (!isRunning) return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const mouseX = (event.clientX - rect.left) * scaleX; const idx = Math.floor(mouseX / 50); if (idx < 0 || idx >= 16 || revealed[idx]) return; if (countedClicks === 0) { cardOpened.push(idx); revealed[idx] = true; countedClicks = 1; chances++; } else if (countedClicks === 1) { cardOpened.push(idx); revealed[idx] = true; countedClicks = 2; } else { const last = cardOpened[cardOpened.length - 1], secLast = cardOpened[cardOpened.length - 2]; if (cardsListing[last] !== cardsListing[secLast]) { revealed[last] = false; revealed[secLast] = false; cardOpened.pop(); cardOpened.pop(); } revealed[idx] = true; cardOpened.push(idx); countedClicks = 1; chances++; } turnDisplay.innerText = chances; draw(); });
-    function draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); for (let i = 0; i < 16; i++) { const x = i * 50; ctx.strokeStyle = "cornflowerblue"; ctx.lineWidth = 2; ctx.strokeRect(x, 0, 50, 100); if (revealed[i]) { ctx.fillStyle = "cornflowerblue"; ctx.font = "35px Roboto"; ctx.textAlign = "center"; ctx.fillText(cardsListing[i], x + 25, 65); } else { ctx.fillStyle = "#6495ED"; ctx.fillRect(x + 2, 2, 46, 96); } } }
-    initData(); draw();
+    // --- DOM Elemente ---
+    const canvas = document.getElementById("memoryCanvas"); 
+    const ctx = canvas.getContext("2d"); 
+    const btn = document.getElementById("toggleBtn"); 
+    const turnDisplay = document.getElementById("turnCounter");
+
+    // --- Spiel Variablen ---
+    let isRunning = false; 
+    let cardsListing = [];  // Speichert die Zahlenwerte der Karten (0-7, jeweils doppelt)
+    let revealed = [];      // Speichert, ob eine Karte gerade aufgedeckt ist (True/False)
+    let cardOpened = [];    // Indizes der aktuell offenen Karten
+    let countedClicks = 0;  // Zähler für Klicks innerhalb eines Zuges (0, 1 oder 2)
+    let chances = 0;        // Zug-Zähler
+
+    /**
+     * Initialisiert die Spieldaten: Erstellt Kartenpaare und mischt sie.
+     */
+    function initData() {
+        cardsListing = [];
+        // Erstelle 8 Paare (0 bis 7)
+        for (let i = 0; i < 8; i++) { 
+            cardsListing.push(i, i); 
+        }
+        
+        // Karten mischen (Fisher-Yates Shuffle)
+        for (let i = cardsListing.length - 1; i > 0; i--) { 
+            const j = Math.floor(Math.random() * (i + 1)); 
+            [cardsListing[i], cardsListing[j]] = [cardsListing[j], cardsListing[i]]; 
+        }
+        
+        revealed = new Array(16).fill(false);
+        cardOpened = [];
+        countedClicks = 0;
+        chances = 0;
+        turnDisplay.innerText = chances;
+    }
+
+    /**
+     * Startet oder stoppt das Spiel und ändert das Button-Design.
+     */
+    function toggleGame() {
+        if (!isRunning) {
+            isRunning = true;
+            btn.innerText = "Stop";
+            btn.className = "btn stop-mode";
+            initData();
+        } else {
+            isRunning = false;
+            btn.innerText = "Play";
+            btn.className = "btn play-mode";
+            revealed = new Array(16).fill(false);
+            chances = 0;
+            turnDisplay.innerText = chances;
+        }
+        draw();
+    }
+
+    /**
+     * Event-Listener für Klicks auf die Karten.
+     */
+    canvas.addEventListener('click', function(event) {
+        if (!isRunning) return;
+
+        // Umrechnung der Klick-Position auf den Canvas-Index (0 bis 15)
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const mouseX = (event.clientX - rect.left) * scaleX;
+        const idx = Math.floor(mouseX / 50);
+
+        // Klick ignorieren, wenn außerhalb oder Karte bereits offen
+        if (idx < 0 || idx >= 16 || revealed[idx]) return;
+
+        if (countedClicks === 0) {
+            // Erster Klick im Zug
+            cardOpened.push(idx);
+            revealed[idx] = true;
+            countedClicks = 1;
+            chances++;
+        } else if (countedClicks === 1) {
+            // Zweiter Klick im Zug
+            cardOpened.push(idx);
+            revealed[idx] = true;
+            countedClicks = 2;
+        } else {
+            // Dritter Klick: Prüfen, ob die letzten zwei ein Paar waren
+            const last = cardOpened[cardOpened.length - 1];
+            const secLast = cardOpened[cardOpened.length - 2];
+
+            if (cardsListing[last] !== cardsListing[secLast]) {
+                // Kein Paar -> Beide wieder zudecken
+                revealed[last] = false;
+                revealed[secLast] = false;
+                cardOpened.pop();
+                cardOpened.pop();
+            }
+            
+            // Die neue Karte aufdecken
+            revealed[idx] = true;
+            cardOpened.push(idx);
+            countedClicks = 1;
+            chances++;
+        }
+        
+        turnDisplay.innerText = chances;
+        draw();
+    });
+
+    /**
+     * Zeichnet das Spielfeld auf den Canvas.
+     */
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < 16; i++) {
+            const x = i * 50;
+            
+            // Kartenrahmen
+            ctx.strokeStyle = "#317eae"; 
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, 0, 50, 100);
+
+            if (revealed[i]) {
+                // Offene Karte: Zeige die Zahl
+                ctx.fillStyle = "#317eae";
+                ctx.font = "35px Roboto";
+                ctx.textAlign = "center";
+                ctx.fillText(cardsListing[i], x + 25, 65);
+            } else {
+                // Verdeckte Karte: Zeichne die Rückseite in Website-Blau
+                ctx.fillStyle = "#317eae";
+                ctx.fillRect(x + 2, 2, 46, 96);
+            }
+        }
+    }
+
+    // Initialer Zeichenvorgang beim Laden der Seite
+    initData(); 
+    draw();
 </script>
+
 </body>
 </html>
